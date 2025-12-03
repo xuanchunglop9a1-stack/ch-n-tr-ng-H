@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerPath Finder – Tìm trường phù hợp nhất</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for aesthetic and typography */
+        :root {
+            --primary-blue: #2563eb;
+            --secondary-indigo: #4338ca;
+            --shadow-soft: 0 10px 30px rgba(37, 99, 235, 0.15);
+            --card-radius: 24px;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1f2937; /* Dark text for light mode */
+            transition: background-color 0.3s, color 0.3s;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Poppins', sans-serif;
+        }
+        .btn-primary {
+            background-image: linear-gradient(90deg, var(--primary-blue), var(--secondary-indigo));
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.6);
+            transform: translateY(-2px);
+        }
+        .card {
+            border-radius: var(--card-radius);
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(37, 99, 235, 0.2);
+        }
+        .header-gradient {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(243, 244, 246, 1) 100%);
+        }
+        /* Dark Mode styles */
+        .dark {
+            background-color: #111827; /* Dark background */
+            color: #e5e7eb; /* Light text */
+        }
+        .dark .card {
+            background-color: #1f2937;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .dark .header-gradient {
+            background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
+        }
+        .dark .text-gray-600 { color: #d1d5db; }
+        .dark .border-gray-200 { border-color: #374151; }
+        .dark .bg-gray-50 { background-color: #1f2937; }
+
+        /* Animation class for page transitions */
+        .page-content {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Style for the radial chart (mockup) */
+        .radial-chart-mockup {
+            width: 200px; height: 200px; border-radius: 50%;
+            background: conic-gradient(
+                #2563eb 0% 16.66%,
+                #4338ca 16.66% 33.32%,
+                #f97316 33.32% 49.98%,
+                #10b981 49.98% 66.64%,
+                #ef4444 66.64% 83.3%,
+                #6366f1 83.3% 100%
+            );
+            box-shadow: inset 0 0 0 10px #ffffff;
+            position: relative;
+        }
+        .dark .radial-chart-mockup {
+            box-shadow: inset 0 0 0 10px #1f2937;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 transition duration-300">
+
+    <!-- Global State & Data (Mock) -->
+    <script>
+        // Global variables and mock data
+        let isAuthenticated = false; // Mock authentication status
+        let currentUser = {
+            id: 'user-001',
+            name: 'Sinh Viên Tương Lai',
+            email: 'sv@careerpath.vn',
+            quizResult: null,
+            comparisonList: []
+        };
+        const QUIZ_QUESTIONS = [
+            { id: 1, text: "Tôi thích làm việc ngoài trời, tự tay sửa chữa đồ đạc.", model: "riasec", type: "R" },
+            { id: 2, text: "Tôi thích làm việc với các con số, thí nghiệm, và nghiên cứu.", model: "riasec", type: "I" },
+            { id: 3, text: "Tôi thích các hoạt động sáng tạo như vẽ, thiết kế, âm nhạc.", model: "riasec", type: "A" },
+            { id: 4, text: "Tôi thích dạy người khác, chăm sóc người khác hoặc làm việc nhóm.", model: "riasec", type: "S" },
+            { id: 5, text: "Tôi thích lãnh đạo, thuyết phục người khác và kinh doanh.", model: "riasec", type: "E" },
+            { id: 6, text: "Tôi thích sắp xếp, ghi chép sổ sách, làm việc chi tiết.", model: "riasec", type: "C" },
+            { id: 7, text: "Tôi dễ dàng nhớ các quy luật và công thức toán học phức tạp.", model: "mi", type: "Logic" },
+            { id: 8, text: "Tôi có khả năng cảm thụ và tạo ra các giai điệu âm nhạc.", model: "mi", type: "Musical" },
+            { id: 9, text: "Tôi có trí tưởng tượng phong phú và thích viết truyện, thơ.", model: "mi", type: "Linguistic" },
+            { id: 10, text: "Tôi giỏi nhận biết và phản ứng với tâm trạng người khác.", model: "mi", type: "Interpersonal" },
+            { id: 11, text: "Tôi thường suy nghĩ về ý nghĩa cuộc sống và vũ trụ.", model: "mi", type: "Existential" },
+            { id: 12, text: "Điểm trung bình các môn Tự nhiên (Toán, Lý, Hóa) của tôi là:", model: "academic", type: "Science" },
+            { id: 13, text: "Điểm trung bình các môn Xã hội (Văn, Sử, Địa) của tôi là:", model: "academic", type: "Social" },
+            { id: 14, text: "Tôi thích xây dựng mô hình 3D hoặc lắp ráp các thiết bị.", model: "riasec", type: "R" },
+            { id: 15, text: "Tôi có xu hướng phân tích vấn đề trước khi hành động.", model: "riasec", type: "I" },
+            { id: 16, text: "Tôi không ngại nói trước đám đông và thích trở thành trung tâm.", model: "riasec", type: "E" },
+            { id: 17, text: "Tôi thích các công việc có quy trình rõ ràng, ít thay đổi.", model: "riasec", type: "C" },
+            { id: 18, text: "Tôi có thể hình dung không gian 3 chiều dễ dàng.", model: "mi", type: "Spatial" },
+            { id: 19, text: "Tôi giỏi điều khiển cơ thể trong thể thao hoặc nhảy múa.", model: "mi", type: "Body" },
+            { id: 20, text: "Tôi hiểu rõ cảm xúc, động lực và mục tiêu của bản thân.", model: "mi", type: "Intrapersonal" },
+            { id: 21, text: "Tôi có khả năng nhận biết các loài thực vật, động vật và đá.", model: "mi", type: "Naturalist" },
+            { id: 22, text: "Tôi thường tham gia các hoạt động thiện nguyện.", model: "riasec", type: "S" },
+            { id: 23, text: "Tôi thích tạo ra những tác phẩm mới, độc đáo.", model: "riasec", type: "A" },
+            { id: 24, text: "Điểm trung bình môn Tiếng Anh của tôi là:", model: "academic", type: "English" },
+            { id: 25, text: "Tôi tự đánh giá khả năng quản lý thời gian của bản thân (1-10):", model: "academic", type: "Skill" },
+        ];
+
+        const RIASEC_PROFILES = {
+            R: { name: 'Thực tế (Realistic)', focus: 'Kỹ thuật, Xây dựng, Nông nghiệp' },
+            I: { name: 'Nghiên cứu (Investigative)', focus: 'Khoa học, Công nghệ, Y Dược' },
+            A: { name: 'Nghệ thuật (Artistic)', focus: 'Thiết kế, Truyền thông, Sân khấu' },
+            S: { name: 'Xã hội (Social)', focus: 'Giáo dục, Y tế, Công tác xã hội' },
+            E: { name: 'Kinh doanh (Enterprising)', focus: 'Kinh tế, Quản trị, Marketing' },
+            C: { name: 'Quy tắc (Conventional)', focus: 'Kế toán, Luật, Hành chính' },
+        };
+
+        const MOCK_SCHOOLS = [
+            { id: 'hcmut', name: 'Đại học Bách Khoa TP.HCM', region: 'Nam', fee: 30000000, riasec_match: { R: 9, I: 8, A: 3, S: 4, E: 7, C: 6 }, cutoff: 26.5, job_rate: 98, major: ['Kỹ thuật Hàng không', 'Khoa học Máy tính', 'Quản lý Công nghiệp'], review: 4.5, facility: 'Rất hiện đại' },
+            { id: 'ftu', name: 'Đại học Ngoại Thương', region: 'Bắc', fee: 25000000, riasec_match: { R: 3, I: 5, A: 6, S: 7, E: 9, C: 8 }, cutoff: 27.8, job_rate: 99, major: ['Kinh tế Quốc tế', 'Quản trị Kinh doanh', 'Tài chính'], review: 4.8, facility: 'Hiện đại' },
+            { id: 'hust', name: 'Đại học Bách Khoa Hà Nội', region: 'Bắc', fee: 28000000, riasec_match: { R: 9, I: 9, A: 2, S: 3, E: 6, C: 5 }, cutoff: 25.0, job_rate: 97, major: ['Công nghệ Thông tin', 'Cơ khí', 'Kỹ thuật Ô tô'], review: 4.6, facility: 'Hiện đại' },
+            { id: 'hueuni', name: 'Đại học Huế', region: 'Trung', fee: 15000000, riasec_match: { R: 5, I: 6, A: 5, S: 7, E: 6, C: 6 }, cutoff: 22.0, job_rate: 90, major: ['Y khoa', 'Sư phạm', 'Kinh tế'], review: 4.0, facility: 'Trung bình tốt' },
+            { id: 'ussh', name: 'Đại học KHXH&NV TP.HCM', region: 'Nam', fee: 12000000, riasec_match: { R: 2, I: 4, A: 8, S: 9, E: 5, C: 5 }, cutoff: 24.5, job_rate: 93, major: ['Truyền thông', 'Quan hệ Quốc tế', 'Văn học'], review: 4.3, facility: 'Tốt' },
+        ];
+
+        // Utility to format currency
+        const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(amount);
+
+        // --- PAGE ROUTING FUNCTION ---
+        function showPage(pageId, schoolId = null) {
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.add('hidden');
+                section.classList.remove('page-content');
+            });
+
+            const activeSection = document.getElementById(pageId);
+            if (activeSection) {
+                activeSection.classList.remove('hidden');
+                activeSection.classList.add('page-content');
+            }
+
+            // Specific logic for certain pages
+            if (pageId === 'dashboard-section') {
+                renderDashboard();
+            } else if (pageId === 'school-detail-section' && schoolId) {
+                renderSchoolDetail(schoolId);
+            } else if (pageId === 'school-list-section') {
+                renderSchoolList();
+            } else if (pageId === 'comparison-section') {
+                renderComparison();
+            }
+
+            // Close mobile menu if open
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+
+        // --- DARK MODE TOGGLE ---
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
+        
+        // Initial theme check
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // --- QUIZ LOGIC (Trắc nghiệm) ---
+
+        let quizAnswers = {};
+
+        function startQuiz() {
+            quizAnswers = {};
+            const quizContent = document.getElementById('quiz-questions');
+            quizContent.innerHTML = ''; // Clear previous questions
+
+            QUIZ_QUESTIONS.forEach(q => {
+                let inputHtml = '';
+                if (q.model === 'riasec' || q.model === 'mi') {
+                    // 5-level Likert scale for RIASEC/MI (Rất không đồng ý - Rất đồng ý)
+                    inputHtml = `
+                        <div class="flex justify-between mt-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span>Không đồng ý</span>
+                            <span>Bình thường</span>
+                            <span>Rất đồng ý</span>
+                        </div>
+                        <div class="flex justify-between items-center space-x-2">
+                            ${[1, 2, 3, 4, 5].map(val => `
+                                <input type="radio" name="q_${q.id}" value="${val}" class="form-radio h-4 w-4 text-blue-600 focus:ring-blue-500 transition" required>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (q.model === 'academic' && q.type !== 'Skill') {
+                    // Academic scores (0-10)
+                    inputHtml = `<input type="number" name="q_${q.id}" min="0" max="10" step="0.1" class="w-full mt-2 p-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500" placeholder="Nhập điểm (0-10)" required>`;
+                } else if (q.model === 'academic' && q.type === 'Skill') {
+                    // Skill score (1-10)
+                    inputHtml = `<input type="range" name="q_${q.id}" min="1" max="10" value="5" oninput="this.nextElementSibling.value=this.value" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"><output class="block text-center mt-2 font-semibold">5</output>`;
+                }
+
+                quizContent.innerHTML += `
+                    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4">
+                        <p class="font-semibold mb-3">${q.id}. ${q.text}</p>
+                        ${inputHtml}
+                    </div>
+                `;
+            });
+
+            showPage('quiz-section');
+        }
+
+        function submitQuiz(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const rawResults = {};
+
+            // Initialize result structure
+            const results = {
+                riasec: { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 },
+                mi: { Linguistic: 0, Logic: 0, Spatial: 0, Body: 0, Musical: 0, Interpersonal: 0, Intrapersonal: 0, Naturalist: 0, Existential: 0 },
+                academic: { Science: 0, Social: 0, English: 0, Skill: 0, Total: 0 },
+                totalQuestions: 0
+            };
+
+            // 1. Process Raw Data
+            QUIZ_QUESTIONS.forEach(q => {
+                const value = parseFloat(formData.get(`q_${q.id}`));
+                if (q.model === 'riasec') {
+                    results.riasec[q.type] += value;
+                } else if (q.model === 'mi') {
+                    results.mi[q.type] += value;
+                } else if (q.model === 'academic') {
+                    results.academic[q.type] = value;
+                    results.academic.Total += value;
+                }
+                results.totalQuestions++;
+            });
+
+            // 2. Normalize and Finalize Results
+            // RIASEC/MI: Max score normalization (6 questions * 5 points max for RIASEC)
+            const riasecCounts = QUIZ_QUESTIONS.filter(q => q.model === 'riasec').reduce((acc, q) => { acc[q.type] = (acc[q.type] || 0) + 1; return acc; }, {});
+            
+            Object.keys(results.riasec).forEach(key => {
+                const maxScore = riasecCounts[key] * 5;
+                // Normalize to a 0-10 scale for easier visualization/matching
+                results.riasec[key] = Math.round((results.riasec[key] / maxScore) * 10);
+            });
+
+            // Academic: Simple average for Science/Social/English, Skill remains 1-10
+            const academicTotalCount = 4; // Science, Social, English, Skill
+            results.academic.Average = Math.round((results.academic.Total / academicTotalCount) * 10) / 10;
+            
+            // MI: Normalize (3 questions * 5 points max)
+            const miCounts = QUIZ_QUESTIONS.filter(q => q.model === 'mi').reduce((acc, q) => { acc[q.type] = (acc[q.type] || 0) + 1; return acc; }, {});
+            Object.keys(results.mi).forEach(key => {
+                 const maxScore = miCounts[key] ? miCounts[key] * 5 : 0;
+                 if (maxScore > 0) {
+                     results.mi[key] = Math.round((results.mi[key] / maxScore) * 10);
+                 }
+            });
+
+
+            // 3. Determine Top 3 RIASEC and MI
+            results.riasecTop = Object.entries(results.riasec).sort((a, b) => b[1] - a[1]).slice(0, 3).map(i => i[0]);
+            results.miTop = Object.entries(results.mi).sort((a, b) => b[1] - a[1]).slice(0, 3).map(i => i[0]);
+
+            currentUser.quizResult = results;
+            localStorage.setItem(`user-${currentUser.id}-result`, JSON.stringify(results));
+            
+            showPage('result-section');
+        }
+
+        // --- RESULT DISPLAY (Dashboard) ---
+
+        function renderDashboard() {
+            const results = currentUser.quizResult || JSON.parse(localStorage.getItem(`user-${currentUser.id}-result`));
+            const dashboardContent = document.getElementById('dashboard-content');
+
+            if (!results) {
+                dashboardContent.innerHTML = `<div class="text-center p-8 text-gray-500 dark:text-gray-400">
+                    <p class="mb-4">Bạn chưa hoàn thành bài đánh giá nào. Hãy nhấn nút dưới đây để bắt đầu!</p>
+                    <button onclick="startQuiz()" class="btn-primary text-white font-semibold py-3 px-6 rounded-full transition duration-300">
+                        Bắt đầu đánh giá ngay
+                    </button>
+                </div>`;
+                return;
+            }
+
+            // Mock Industry Suggestion based on top RIASEC code
+            const topRiasecName = RIASEC_PROFILES[results.riasecTop[0]].name;
+            const suggestedIndustry = RIASEC_PROFILES[results.riasecTop[0]].focus.split(', ')[0];
+
+            // Mock School Recommendation (Simple score: Sum of RIASEC match * user's RIASEC score)
+            const recommendedSchools = MOCK_SCHOOLS.map(school => {
+                let matchScore = 0;
+                Object.keys(results.riasec).forEach(key => {
+                    matchScore += school.riasec_match[key] * results.riasec[key]; // RIASEC match score (0-10) * User score (0-10)
+                });
+                
+                // Add academic factor (e.g., if Academic Avg is close to Cutoff)
+                const academicMatch = 1 - Math.abs(results.academic.Average - school.cutoff) / 5; // Simple factor
+                matchScore += Math.max(0, academicMatch) * 100;
+
+                return {
+                    ...school,
+                    finalScore: Math.round(matchScore / 20) * 10 + Math.floor(Math.random() * 5), // Normalize to a visible %
+                    riasecCode: results.riasecTop.join('')
+                };
+            }).sort((a, b) => b.finalScore - a.finalScore).slice(0, 3);
+
+
+            dashboardContent.innerHTML = `
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- Column 1: Summary -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <h2 class="text-2xl font-heading font-bold text-gray-900 dark:text-white mb-4 border-b pb-2 border-indigo-200 dark:border-indigo-800">Tóm Tắt Hồ Sơ Cá Nhân</h2>
+                        
+                        <div class="card p-6 bg-white dark:bg-gray-800">
+                            <h3 class="font-bold text-xl mb-3 text-blue-600 dark:text-blue-400">Nhóm Tính Cách Chi Phối</h3>
+                            <p class="text-3xl font-extrabold font-heading mb-2">${results.riasecTop.join('')} - ${topRiasecName}</p>
+                            <p class="text-gray-600 dark:text-gray-400">Bạn phù hợp nhất với nhóm ngành ${RIASEC_PROFILES[results.riasecTop[0]].focus}.</p>
+                        </div>
+
+                        <div class="card p-6 bg-white dark:bg-gray-800">
+                            <h3 class="font-bold text-xl mb-3 text-purple-600 dark:text-purple-400">Ngành Đề Xuất Hàng Đầu</h3>
+                            <ul class="space-y-2 text-gray-700 dark:text-gray-300">
+                                <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-500"></i>${suggestedIndustry}</li>
+                                <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-500"></i>${results.miTop[0]} - ${results.riasecTop[1]}</li>
+                                <li class="flex items-center"><i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-500"></i>${results.riasecTop[2]} liên quan</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Column 2 & 3: Charts and Schools -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <!-- Chart Section -->
+                        <h2 class="text-2xl font-heading font-bold text-gray-900 dark:text-white mb-4 border-b pb-2 border-indigo-200 dark:border-indigo-800">Phân Tích Năng Lực & Sở Thích</h2>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <!-- RIASEC Radar Chart Mockup -->
+                            <div class="card p-6 bg-white dark:bg-gray-800 flex flex-col items-center">
+                                <h3 class="font-semibold text-lg mb-4">Mô Hình Holland (RIASEC)</h3>
+                                <div class="relative flex justify-center items-center w-full h-48">
+                                    <div class="radial-chart-mockup"></div>
+                                    <div class="absolute inset-0 flex flex-wrap justify-center items-center text-xs font-bold text-white/90">
+                                        ${Object.keys(results.riasec).map(k => `
+                                            <span class="p-1 rounded-full text-center" style="position: absolute; transform: translate(-50%, -50%); top: ${50 + Math.sin(Math.random() * 360) * 40}%; left: ${50 + Math.cos(Math.random() * 360) * 40}%; background-color: ${k === results.riasecTop[0] ? '#2563eb' : '#4338ca'}">${k} (${results.riasec[k]}/10)</span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Academic Bar Chart Mockup -->
+                            <div class="card p-6 bg-white dark:bg-gray-800">
+                                <h3 class="font-semibold text-lg mb-4">Thang Điểm Học Lực (0-10)</h3>
+                                <div class="space-y-3">
+                                    ${Object.keys(results.academic).filter(k => k !== 'Total').map(k => `
+                                        <div>
+                                            <p class="text-sm font-medium">${k} (${results.academic[k]})</p>
+                                            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${(results.academic[k] / 10) * 100}%"></div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div class="mt-4 pt-4 border-t dark:border-gray-700 font-bold text-lg">
+                                    <p>ĐTB Tổng quát: <span class="text-blue-600">${results.academic.Average}</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- School Recommendation List -->
+                        <h2 class="text-2xl font-heading font-bold text-gray-900 dark:text-white mb-4 border-b pb-2 border-indigo-200 dark:border-indigo-800">Trường Học Phù Hợp Nhất (Top 3)</h2>
+                        <div class="space-y-4">
+                            ${recommendedSchools.map(school => `
+                                <div class="card p-5 bg-white dark:bg-gray-800 flex justify-between items-center transition duration-300 hover:ring-2 hover:ring-blue-500">
+                                    <div>
+                                        <h4 class="text-xl font-bold text-gray-900 dark:text-white">${school.name} (${school.region})</h4>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Ngành tiêu biểu: ${school.major.join(', ')}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-3xl font-extrabold text-blue-600">${school.finalScore}%</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Độ phù hợp (AI)</p>
+                                        <button onclick="showPage('school-detail-section', '${school.id}')" class="text-sm mt-2 text-purple-600 hover:underline">Xem chi tiết <i data-lucide="arrow-right" class="w-4 h-4 inline-block"></i></button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            // Re-render Lucide icons
+            lucide.createIcons();
+        }
+
+        // --- SCHOOL DETAIL LOGIC (Chi tiết trường) ---
+
+        function renderSchoolDetail(schoolId) {
+            const school = MOCK_SCHOOLS.find(s => s.id === schoolId);
+            const detailContent = document.getElementById('school-detail-content');
+            
+            if (!school) {
+                detailContent.innerHTML = `<div class="text-center p-12">Không tìm thấy thông tin trường.</div>`;
+                return;
+            }
+
+            // Mock Match Score for display
+            const matchScore = (Math.floor(Math.random() * 20) + 75); // 75% to 95%
+            
+            // Mock Cutoff Data for chart
+            const cutoffData = [
+                { year: 2023, score: school.cutoff },
+                { year: 2022, score: school.cutoff - 0.5 + Math.random() * 1 }, // +- 0.5
+                { year: 2021, score: school.cutoff - 1 + Math.random() * 2 } // +- 1
+            ];
+
+            detailContent.innerHTML = `
+                <div class="max-w-4xl mx-auto p-6 lg:p-10 card bg-white dark:bg-gray-800">
+                    <div class="flex items-center justify-between border-b pb-4 mb-6">
+                        <div class="flex items-center">
+                            <i data-lucide="graduation-cap" class="w-12 h-12 text-blue-600 mr-4"></i>
+                            <h1 class="text-3xl font-heading font-extrabold text-gray-900 dark:text-white">${school.name}</h1>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Phù hợp với bạn</p>
+                            <p class="text-5xl font-extrabold text-green-500">${matchScore}%</p>
+                        </div>
+                    </div>
+                    
+                    <!-- General Info -->
+                    <div class="grid md:grid-cols-3 gap-6 mb-8 text-gray-700 dark:text-gray-300">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="map-pin" class="w-5 h-5 text-indigo-500"></i>
+                            <p>Khu vực: <span class="font-semibold">${school.region}</span></p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="dollar-sign" class="w-5 h-5 text-indigo-500"></i>
+                            <p>Học phí: <span class="font-semibold">${formatCurrency(school.fee)}/năm</span></p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="briefcase" class="w-5 h-5 text-indigo-500"></i>
+                            <p>Tỉ lệ việc làm: <span class="font-semibold">${school.job_rate}%</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Ngành Đào Tạo -->
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-heading font-bold mb-4 border-l-4 border-blue-500 pl-4">Ngành Đào Tạo Tiêu Biểu</h2>
+                        <div class="flex flex-wrap gap-3">
+                            ${school.major.map(m => `<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full dark:bg-blue-900 dark:text-blue-200 text-sm font-medium">${m}</span>`).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Điểm Chuẩn và Cơ Sở Vật Chất -->
+                    <div class="grid md:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-gray-50 dark:bg-gray-900 p-5 rounded-xl">
+                            <h3 class="font-bold text-xl mb-3 text-purple-600 dark:text-purple-400">Biểu đồ Điểm Chuẩn 3 Năm</h3>
+                            <!-- Simple Bar Chart Mockup -->
+                            <div class="flex justify-around items-end h-40">
+                                ${cutoffData.map(d => `
+                                    <div class="w-1/4 flex flex-col items-center">
+                                        <div class="text-xs mb-1">${d.score}</div>
+                                        <div class="w-full bg-blue-500 rounded-t-lg transition-all duration-700" style="height: ${d.score / 30 * 100}%; max-height: 100%;"></div>
+                                        <div class="text-sm mt-1">${d.year}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900 p-5 rounded-xl space-y-3">
+                            <h3 class="font-bold text-xl mb-3 text-purple-600 dark:text-purple-400">Đánh Giá Tổng Quan</h3>
+                            <p class="flex justify-between items-center"><span class="font-medium">Cơ sở vật chất:</span> <span class="font-bold text-green-600">${school.facility}</span></p>
+                            <p class="flex justify-between items-center"><span class="font-medium">Review Sinh viên:</span> <span class="font-bold text-yellow-500">${school.review} / 5 <i data-lucide="star" class="w-4 h-4 inline-block fill-yellow-500"></i></span></p>
+                            <p class="text-sm pt-2 italic text-gray-500 dark:text-gray-400">"Đây là phần giới thiệu và đánh giá chi tiết từ các nguồn dữ liệu tin cậy."</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4">
+                        <button onclick="toggleComparison('${school.id}')" id="compare-btn-${school.id}" class="px-4 py-2 border border-blue-500 text-blue-500 rounded-full hover:bg-blue-50 transition duration-300">
+                            ${currentUser.comparisonList.includes(school.id) ? 'Xóa khỏi So sánh' : 'Thêm vào So sánh'} <i data-lucide="list-plus" class="w-4 h-4 inline-block ml-1"></i>
+                        </button>
+                        <button onclick="showPage('school-list-section')" class="px-4 py-2 text-white bg-gray-500 rounded-full hover:bg-gray-600 transition duration-300">
+                            Quay lại Danh sách
+                        </button>
+                    </div>
+                </div>
+            `;
+            // Update the state of the comparison button
+            updateComparisonButton(schoolId);
+            lucide.createIcons();
+        }
+
+        // --- SCHOOL LIST & FILTER LOGIC (Danh sách trường & Bộ lọc) ---
+
+        function toggleComparison(schoolId) {
+            const index = currentUser.comparisonList.indexOf(schoolId);
+            if (index > -1) {
+                currentUser.comparisonList.splice(index, 1);
+            } else {
+                if (currentUser.comparisonList.length < 3) {
+                    currentUser.comparisonList.push(schoolId);
+                } else {
+                    alert('Chỉ được so sánh tối đa 3 trường.');
+                    return;
+                }
+            }
+            localStorage.setItem(`user-${currentUser.id}-compare`, JSON.stringify(currentUser.comparisonList));
+            updateComparisonButton(schoolId);
+            showPage('comparison-section'); // Redirect to comparison page after action
+        }
+        
+        function updateComparisonButton(schoolId) {
+            const button = document.getElementById(`compare-btn-${schoolId}`);
+            if (button) {
+                if (currentUser.comparisonList.includes(schoolId)) {
+                    button.classList.remove('text-blue-500', 'border-blue-500', 'hover:bg-blue-50');
+                    button.classList.add('text-red-500', 'border-red-500', 'hover:bg-red-50');
+                    button.innerHTML = 'Xóa khỏi So sánh <i data-lucide="list-minus" class="w-4 h-4 inline-block ml-1"></i>';
+                } else {
+                    button.classList.remove('text-red-500', 'border-red-500', 'hover:bg-red-50');
+                    button.classList.add('text-blue-500', 'border-blue-500', 'hover:bg-blue-50');
+                    button.innerHTML = 'Thêm vào So sánh <i data-lucide="list-plus" class="w-4 h-4 inline-block ml-1"></i>';
+                }
+            }
+            lucide.createIcons();
+        }
+
+        function renderSchoolList(filters = {}) {
+            const listContainer = document.getElementById('school-list-container');
+            const userResult = currentUser.quizResult || JSON.parse(localStorage.getItem(`user-${currentUser.id}-result`));
+            let schools = [...MOCK_SCHOOLS];
+
+            // 1. Apply Filters (Simplified)
+            // Currently, no form submits, so we use a simple filter here.
+            
+            // 2. Sort/Recommend (AI Style)
+            if (userResult) {
+                schools = schools.map(school => {
+                    let matchScore = 0;
+                    Object.keys(userResult.riasec).forEach(key => {
+                        matchScore += school.riasec_match[key] * userResult.riasec[key];
+                    });
+                    const academicMatch = 1 - Math.abs(userResult.academic.Average - school.cutoff) / 5;
+                    matchScore += Math.max(0, academicMatch) * 100;
+
+                    return {
+                        ...school,
+                        finalScore: Math.round(matchScore / 20) * 10 + Math.floor(Math.random() * 5),
+                    };
+                }).sort((a, b) => b.finalScore - a.finalScore); // Sort by highest match
+            }
+            
+            listContainer.innerHTML = schools.map(school => `
+                <div class="card p-5 bg-white dark:bg-gray-800 transition duration-300 flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div class="flex-grow mb-4 md:mb-0">
+                        <h3 class="text-xl font-heading font-bold text-blue-600 dark:text-blue-400">${school.name}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                            <span class="mr-3"><i data-lucide="map-pin" class="w-4 h-4 inline-block mr-1"></i>Khu vực: ${school.region}</span>
+                            <span><i data-lucide="award" class="w-4 h-4 inline-block mr-1"></i>Điểm chuẩn (2023): ${school.cutoff}</span>
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            ${school.major.slice(0, 3).map(m => `<span class="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-800 rounded-full dark:bg-indigo-900 dark:text-indigo-200">${m}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-start md:items-end space-y-2">
+                        ${userResult ? `<div class="text-right">
+                            <p class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Phù hợp (AI)</p>
+                            <p class="text-3xl font-extrabold text-green-500">${school.finalScore}%</p>
+                        </div>` : ''}
+                        <div class="flex space-x-2">
+                            <button onclick="toggleComparison('${school.id}')" id="compare-btn-${school.id}-list" class="px-3 py-1 text-sm border border-blue-500 text-blue-500 rounded-full hover:bg-blue-50 transition duration-300">
+                                ${currentUser.comparisonList.includes(school.id) ? 'Xóa' : 'So sánh'}
+                            </button>
+                            <button onclick="showPage('school-detail-section', '${school.id}')" class="px-3 py-1 text-sm btn-primary text-white rounded-full transition duration-300">
+                                Xem chi tiết
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Re-update comparison buttons and icons
+            MOCK_SCHOOLS.forEach(school => updateComparisonButton(school.id + '-list'));
+            lucide.createIcons();
+        }
+
+        // --- COMPARISON LOGIC (So sánh trường) ---
+
+        function renderComparison() {
+            const comparisonContainer = document.getElementById('comparison-table-container');
+            const schoolsToCompare = MOCK_SCHOOLS.filter(s => currentUser.comparisonList.includes(s.id));
+
+            if (schoolsToCompare.length < 2) {
+                comparisonContainer.innerHTML = `<div class="text-center p-12 text-gray-500 dark:text-gray-400">
+                    <p class="mb-4">Vui lòng thêm ít nhất 2 trường vào danh sách so sánh.</p>
+                    <button onclick="showPage('school-list-section')" class="px-4 py-2 text-white bg-blue-600 rounded-full hover:bg-blue-700 transition duration-300">
+                        Tìm kiếm Trường
+                    </button>
+                </div>`;
+                return;
+            }
+
+            const features = [
+                { id: 'region', name: 'Khu vực', type: 'text' },
+                { id: 'cutoff', name: 'Điểm chuẩn (2023)', type: 'score' },
+                { id: 'fee', name: 'Học phí (/năm)', type: 'currency' },
+                { id: 'job_rate', name: 'Tỉ lệ việc làm', type: 'percent' },
+                { id: 'review', name: 'Review Sinh viên', type: 'rating' },
+                { id: 'facility', name: 'Cơ sở vật chất', type: 'text' },
+                { id: 'major', name: 'Ngành đào tạo nổi bật', type: 'list' },
+            ];
+
+            const tableHeader = schoolsToCompare.map(school => `
+                <th class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-left">
+                    <div class="font-heading font-bold text-lg text-blue-600 dark:text-blue-400">${school.name}</div>
+                    <button onclick="removeFromComparison('${school.id}')" class="text-xs text-red-500 hover:underline"><i data-lucide="x" class="w-3 h-3 inline-block mr-1"></i>Xóa</button>
+                </th>
+            `).join('');
+
+            const tableBody = features.map(feature => `
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <td class="p-4 font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700">${feature.name}</td>
+                    ${schoolsToCompare.map(school => {
+                        let value = school[feature.id];
+                        if (feature.type === 'currency') {
+                            value = formatCurrency(value);
+                        } else if (feature.type === 'percent') {
+                            value = `${value}%`;
+                        } else if (feature.type === 'rating') {
+                            value = `${value} <i data-lucide="star" class="w-4 h-4 inline-block fill-yellow-500 text-yellow-500"></i>`;
+                        } else if (feature.type === 'list') {
+                            value = school.major.slice(0, 3).map(m => `<span class="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-800 rounded-full dark:bg-indigo-900 dark:text-indigo-200">${m}</span>`).join(' ');
+                        }
+                        
+                        return `<td class="p-4 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">${value}</td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+
+            comparisonContainer.innerHTML = `
+                <div class="overflow-x-auto card p-2 bg-white dark:bg-gray-800">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead>
+                            <tr>
+                                <th class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-left w-1/4">Đặc điểm</th>
+                                ${tableHeader}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            ${tableBody}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function removeFromComparison(schoolId) {
+            currentUser.comparisonList = currentUser.comparisonList.filter(id => id !== schoolId);
+            localStorage.setItem(`user-${currentUser.id}-compare`, JSON.stringify(currentUser.comparisonList));
+            renderComparison();
+            // Update the list view button if visible
+            updateComparisonButton(schoolId + '-list');
+            updateComparisonButton(schoolId);
+        }
+
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            // Load state from localStorage
+            const savedResult = localStorage.getItem(`user-${currentUser.id}-result`);
+            if (savedResult) {
+                currentUser.quizResult = JSON.parse(savedResult);
+            }
+            const savedComparison = localStorage.getItem(`user-${currentUser.id}-compare`);
+            if (savedComparison) {
+                currentUser.comparisonList = JSON.parse(savedComparison);
+            }
+
+            // Create initial icons and show the homepage
+            lucide.createIcons();
+            showPage('home-section');
+        };
+
+        // Auto-fill/Search logic (Mock)
+        function searchSchools(event) {
+            const query = event.target.value.toLowerCase();
+            const suggestionsEl = document.getElementById('search-suggestions');
+            
+            if (query.length < 2) {
+                suggestionsEl.innerHTML = '';
+                suggestionsEl.classList.add('hidden');
+                return;
+            }
+
+            const results = MOCK_SCHOOLS.filter(s => s.name.toLowerCase().includes(query) || s.major.some(m => m.toLowerCase().includes(query)));
+            
+            suggestionsEl.innerHTML = results.slice(0, 5).map(s => `
+                <li onclick="showPage('school-detail-section', '${s.id}'); suggestionsEl.classList.add('hidden');" class="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex justify-between items-center transition">
+                    <span class="font-medium">${s.name}</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Trường</span>
+                </li>
+            `).join('');
+
+            if (suggestionsEl.innerHTML) {
+                suggestionsEl.classList.remove('hidden');
+            } else {
+                suggestionsEl.classList.add('hidden');
+            }
+        }
+    </script>
+
+    <!-- 2. A. HEADER -->
+    <header class="sticky top-0 z-50 header-gradient shadow-md dark:shadow-lg dark:shadow-gray-900/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <a href="#" onclick="showPage('home-section')" class="flex items-center space-x-2">
+                    <i data-lucide="send" class="w-8 h-8 text-blue-600"></i>
+                    <span class="text-2xl font-heading font-extrabold text-gray-900 dark:text-white">CareerPath <span class="text-blue-600">Finder</span></span>
+                </a>
+
+                <!-- Desktop Menu -->
+                <nav class="hidden md:flex space-x-6 text-gray-600 dark:text-gray-300 font-medium">
+                    <a href="#" onclick="showPage('home-section')" class="hover:text-blue-600 transition">Trang chủ</a>
+                    <a href="#" onclick="startQuiz()" class="hover:text-blue-600 transition">Trắc nghiệm</a>
+                    <a href="#" onclick="showPage('school-list-section')" class="hover:text-blue-600 transition">Gợi ý trường</a>
+                    <a href="#" onclick="showPage('comparison-section')" class="hover:text-blue-600 transition">So sánh trường</a>
+                    <a href="#" onclick="showPage('blog-section')" class="hover:text-blue-600 transition">Blog</a>
+                    <a href="#" onclick="showPage('contact-section')" class="hover:text-blue-600 transition">Liên hệ</a>
+                </nav>
+
+                <!-- CTA & Toggles -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                        <i data-lucide="sun-moon" class="w-5 h-5 text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                    <a href="#" onclick="showPage('dashboard-section')" class="hidden sm:inline-block btn-primary text-white font-semibold py-2 px-5 rounded-full text-sm">
+                        Dashboard
+                    </a>
+                    <a href="#" onclick="startQuiz()" class="hidden md:inline-block btn-primary text-white font-semibold py-2.5 px-6 rounded-full text-sm">
+                        Bắt đầu đánh giá ngay
+                    </a>
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-button" class="md:hidden p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                        <i data-lucide="menu" class="w-6 h-6 text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-700">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col">
+                <a href="#" onclick="showPage('home-section')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Trang chủ</a>
+                <a href="#" onclick="startQuiz()" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Trắc nghiệm</a>
+                <a href="#" onclick="showPage('school-list-section')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Gợi ý trường</a>
+                <a href="#" onclick="showPage('comparison-section')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">So sánh trường</a>
+                <a href="#" onclick="showPage('blog-section')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Blog</a>
+                <a href="#" onclick="showPage('contact-section')" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">Liên hệ</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="min-h-screen">
+        <!-- 2. B. HERO SECTION (Trang chủ) -->
+        <section id="home-section" class="page-section hidden pt-20 pb-24 lg:pt-32 lg:pb-40 bg-gray-50 dark:bg-gray-800 transition duration-300">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Content -->
+                <div class="animate-slide-in">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-heading font-extrabold text-gray-900 dark:text-white leading-tight mb-6">
+                        Tìm trường <span class="text-blue-600">phù hợp nhất</span> với sở thích và năng lực của bạn
+                    </h1>
+                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-8">
+                        Hệ thống phân tích 360° dựa trên sở thích, tính cách, học lực và mục tiêu nghề nghiệp, sử dụng mô hình Holland & Đa trí thông minh.
+                    </p>
+                    <a href="#" onclick="startQuiz()" class="btn-primary text-white font-semibold py-4 px-10 rounded-full text-lg transition duration-300 hover:shadow-xl">
+                        Làm bài trắc nghiệm miễn phí
+                    </a>
+                    <button onclick="showPage('school-list-section')" class="ml-4 text-blue-600 font-medium py-4 px-6 rounded-full transition duration-300 hover:bg-blue-50 dark:hover:bg-gray-700">
+                        Khám phá trường <i data-lucide="arrow-right" class="w-4 h-4 inline-block ml-1"></i>
+                    </button>
+                </div>
+                <!-- Illustration (Mockup) -->
+                <div class="hidden lg:flex justify-center items-center">
+                    <i data-lucide="cpu" class="w-64 h-64 text-blue-300/50 dark:text-blue-600/30 animate-pulse"></i>
+                    <div class="absolute w-48 h-48 bg-purple-400/10 rounded-full blur-3xl"></div>
+                    <div class="absolute text-center">
+                        <i data-lucide="school" class="w-16 h-16 text-purple-600/70"></i>
+                        <p class="text-xs mt-2 font-bold uppercase text-gray-600 dark:text-gray-300">Dữ liệu AI</p>
+                    </div>
+                    <!--  -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+            <!-- 3.1. QUIZ PAGE (Trắc nghiệm) -->
+            <section id="quiz-section" class="page-section hidden">
+                <h2 class="text-3xl font-heading font-bold mb-6 text-gray-900 dark:text-white text-center">Bài Trắc Nghiệm Tính Cách & Năng Lực (25 Câu)</h2>
+                <p class="text-center text-gray-600 dark:text-gray-300 mb-8">Hoàn thành bài đánh giá để nhận được gợi ý chính xác nhất về nhóm ngành và trường học.</p>
+                <div class="max-w-3xl mx-auto">
+                    <form onsubmit="submitQuiz(event)">
+                        <div id="quiz-questions" class="space-y-4">
+                            <!-- Questions will be injected here by JS -->
+                            <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                                <i data-lucide="clipboard-list" class="w-12 h-12 mx-auto mb-3"></i>
+                                <p>Nhấn "Bắt đầu đánh giá ngay" ở Header để tải câu hỏi.</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-center mt-10">
+                            <button type="submit" class="btn-primary text-white font-semibold py-3 px-8 rounded-full text-lg transition duration-300">
+                                Hoàn thành đánh giá <i data-lucide="send" class="w-4 h-4 inline-block ml-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            
+            <!-- 3.5. DASHBOARD KẾT QUẢ CÁ NHÂN -->
+            <section id="dashboard-section" class="page-section hidden">
+                <h2 class="text-3xl font-heading font-bold mb-8 text-gray-900 dark:text-white">Dashboard Kết Quả Cá Nhân</h2>
+                <div id="dashboard-content">
+                    <!-- Dashboard content injected by JS -->
+                </div>
+            </section>
+
+            <!-- 3.4. TRANG THÔNG TIN TRƯỜNG (CHI TIẾT) -->
+            <section id="school-detail-section" class="page-section hidden">
+                <h2 class="text-3xl font-heading font-bold mb-8 text-gray-900 dark:text-white">Thông Tin Chi Tiết Trường</h2>
+                <div id="school-detail-content">
+                    <!-- School details injected by JS -->
+                </div>
+            </section>
+
+            <!-- 3.2. BỘ LỌC GỢI Ý TRƯỜNG THÔNG MINH (Danh sách trường) -->
+            <section id="school-list-section" class="page-section hidden">
+                <h2 class="text-3xl font-heading font-bold mb-8 text-gray-900 dark:text-white">Danh Sách Trường & Bộ Lọc Thông Minh</h2>
+                
+                <!-- Search and Filter Bar -->
+                <div class="mb-8 grid md:grid-cols-4 gap-4 p-5 card bg-gray-50 dark:bg-gray-800 shadow-md">
+                    <div class="md:col-span-2 relative">
+                        <!-- 3.7. Tìm kiếm thông minh -->
+                        <input type="text" id="school-search" oninput="searchSchools(event)" placeholder="Tìm kiếm tên trường, ngành học..." class="w-full p-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500">
+                        <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <ul id="search-suggestions" class="absolute z-40 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl mt-1 shadow-lg hidden">
+                            <!-- Suggestions injected by JS -->
+                        </ul>
+                    </div>
+                    <select class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700">
+                        <option>Khu vực: Tất cả</option>
+                        <option>Bắc</option><option>Trung</option><option>Nam</option>
+                    </select>
+                    <select class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl dark:bg-gray-700">
+                        <option>Ngành: Kỹ thuật/CNTT</option>
+                        <option>Kinh tế/Quản trị</option><option>Y tế/Sức khỏe</option>
+                    </select>
+                </div>
+                
+                <!-- School List -->
+                <div id="school-list-container" class="space-y-5">
+                    <!-- School cards injected by JS -->
+                </div>
+            </section>
+            
+            <!-- 3.3. TRANG SO SÁNH TRƯỜNG -->
+            <section id="comparison-section" class="page-section hidden">
+                <h2 class="text-3xl font-heading font-bold mb-8 text-gray-900 dark:text-white">So Sánh Trường Học (Tối đa 3 trường)</h2>
+                <div id="comparison-table-container">
+                    <!-- Comparison table/cards injected by JS -->
+                </div>
+            </section>
+
+            <!-- 3.6. BLOG TƯ VẤN -->
+            <section id="blog-section" class="page-section hidden">
+                <h2 class="text-3xl font-heading font-bold mb-8 text-gray-900 dark:text-white">Blog Tư Vấn Hướng Nghiệp & Tuyển Sinh</h2>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Mock Blog Card 1 -->
+                    <div class="card bg-white dark:bg-gray-800 overflow-hidden">
+                        <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <i data-lucide="book-open" class="w-16 h-16 text-blue-400"></i>
+                        </div>
+                        <div class="p-5">
+                            <span class="text-xs font-semibold uppercase text-purple-600 dark:text-purple-400">Hướng nghiệp</span>
+                            <h3 class="text-xl font-bold mt-2 hover:text-blue-600 transition duration-300 cursor-pointer">5 xu hướng ngành nghề hot nhất 2025</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Phân tích chi tiết về ngành công nghệ, y tế và logistics...</p>
+                        </div>
+                    </div>
+                    <!-- Mock Blog Card 2 -->
+                    <div class="card bg-white dark:bg-gray-800 overflow-hidden">
+                        <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <i data-lucide="lightbulb" class="w-16 h-16 text-blue-400"></i>
+                        </div>
+                        <div class="p-5">
+                            <span class="text-xs font-semibold uppercase text-purple-600 dark:text-purple-400">Bí quyết thi cử</span>
+                            <h3 class="text-xl font-bold mt-2 hover:text-blue-600 transition duration-300 cursor-pointer">Chiến lược ôn thi hiệu quả cho khối A01</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Bí quyết phân bổ thời gian và tài liệu ôn tập...</p>
+                        </div>
+                    </div>
+                    <!-- Mock Blog Card 3 -->
+                    <div class="card bg-white dark:bg-gray-800 overflow-hidden">
+                        <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <i data-lucide="clipboard-list" class="w-16 h-16 text-blue-400"></i>
+                        </div>
+                        <div class="p-5">
+                            <span class="text-xs font-semibold uppercase text-purple-600 dark:text-purple-400">Ngành học</span>
+                            <h3 class="text-xl font-bold mt-2 hover:text-blue-600 transition duration-300 cursor-pointer">Nên chọn IT hay AI? Phân tích chuyên sâu</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">So sánh chương trình đào tạo và cơ hội việc làm...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TRANG LIÊN HỆ / VỀ CHÚNG TÔI -->
+            <section id="contact-section" class="page-section hidden">
+                <h2 class="text-3xl font-heading font-bold mb-8 text-gray-900 dark:text-white text-center">Liên Hệ & FAQ</h2>
+                <div class="max-w-xl mx-auto space-y-6">
+                    <div class="card p-6 bg-white dark:bg-gray-800">
+                        <h3 class="text-2xl font-bold text-blue-600 mb-4">Gửi Câu Hỏi Cho Chúng Tôi</h3>
+                        <form class="space-y-4">
+                            <input type="text" placeholder="Tên của bạn" class="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <input type="email" placeholder="Email liên hệ" class="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <textarea rows="4" placeholder="Nội dung câu hỏi" class="w-full p-3 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600"></textarea>
+                            <button type="submit" class="btn-primary w-full text-white font-semibold py-3 rounded-full transition duration-300">Gửi đi</button>
+                        </form>
+                    </div>
+                    <div class="card p-6 bg-white dark:bg-gray-800">
+                        <h3 class="text-2xl font-bold text-blue-600 mb-4">Về CareerPath Finder</h3>
+                        <p class="text-gray-700 dark:text-gray-300">
+                            CareerPath Finder là nền tảng tiên phong ứng dụng AI và các mô hình khoa học tâm lý (Holland, MI) vào việc định hướng nghề nghiệp và chọn trường đại học tại Việt Nam. Chúng tôi cam kết mang lại trải nghiệm chuyên nghiệp, chính xác và cá nhân hóa.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-gray-900 dark:bg-gray-950 text-white py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-gray-400">
+                <p>&copy; 2025 CareerPath Finder. All rights reserved.</p>
+                <p class="mt-2">Hệ thống gợi ý chọn trường thông minh.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
